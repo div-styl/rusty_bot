@@ -9,4 +9,3 @@ This is a Discord bot written in Rust. which can do simple things like:
 - Reply to a message
 - Add roles to a user
 - provide information about exams schedule
-
