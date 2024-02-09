@@ -1465,21 +1465,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustbot24"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "color-print",
- "log",
- "serenity",
- "shuttle-runtime",
- "shuttle-secrets",
- "shuttle-serenity",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "rustc-demangle"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2611,6 +2596,21 @@ name = "webpki-roots"
 version = "0.25.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f20c57d8d7db6d3b86154206ae5d8fba62dd39573114de97c2cb0578251f8e1"
+
+[[package]]
+name = "whiskerwatcher"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "color-print",
+ "log",
+ "serenity",
+ "shuttle-runtime",
+ "shuttle-secrets",
+ "shuttle-serenity",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "winapi"

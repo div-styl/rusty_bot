@@ -2,61 +2,30 @@ use color_print::cprintln;
 use serenity::{
     all::{Http, RoleId},
     async_trait,
-    model::{channel::Message, gateway::Ready},
+    model::{channel::Message, gateway::Ready, id::UserId},
     prelude::*,
 };
+
 use tracing::info;
-
-
 
 /// listing all the commands that rusty-bot can do
 const HELP_MSG: &str = "\
 # 🤖 The Available Commands are 🤖:
-- `!help_doc` **provides a short sheet for notes of lectures that are available**
-- `!exm` **tell the date of the up coming exam, catch up and results**
 - `!report` **call admin**
-- `!ROLES` **add a role to a user**
-";
-/// list the command that but can do with help_doc
-const HELP_DOC_MSG: &str = "\
-# 📕 Hello dear student please pick which semester you belong to 📕 :
-## the usage of command `e.g: !s5`:
-** A link of a google drive will be sent to you in your dm **
-- `!s1` : **semester 1 docs**
-- `!s2` : **semester 2 docs**
-- `!s3` : **semester 3 docs**
-- `!s4` : **semester 4 docs**
-- `!s5` : **semester 5 docs**
-- `!s6` : **semester 6 docs**
-### **Note:** for more commands please use the command `!help`
-";
-
-/// exam details for the upcoming exams
-const EXAM_MSG: &str = "\
-# 📕 The Exams Details 📕 :
-
-## **Exam Date**
-- **Exam Date** : **From 25th to 30th Dec 2023**
-- **Results**: **From 15th to 16th Jan 2024**
-- **Exam catch up** : **From 29th to 2nd Feb 2024**
-- **Results**: **8th Feb 2024**
+- `!roles` **add a role to a user**
 ";
 
 /// available ROLES in the server
 const ROLE_MSG: &str = "\
 # 🤖 Available Roles 🤖 :
-- `!std`: Student at benmsik
-- `!tch`: working as a teacher and studying at ben msik
-- `!nerd`: nerd of the class
+- `!ecom`: E-commerce guy
+- `!iptv`: Iptv enthusiast
 ";
 /// struct of ROLES available
 struct RlId {
-    std: u64,
-    tch: u64,
-    nerd: u64,
+    ecom: u64,
+    iptv: u64,
 }
-
-
 
 pub struct Handler;
 
@@ -70,34 +39,43 @@ impl Handler {
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, new_message: Message) {
-
-        const ROLE_CMD:[&str;3] = ["!std", "!tch", "!nerd"]; // TODO: change to Vec?
-        const ROLE_ID: RlId = RlId { // TODO: use enums that
-                std: 1196562025690714173,
-                tch: 1196562094519234741 ,
-                nerd: 1196516531241242635,
-            };
+        const ROLE_CMD: [&str; 2] = ["!ecom", "!iptv"];
+        const ROLE_ID: RlId = RlId {
+            ecom: 1205082773774401586,
+            iptv: 1205083027735191582,
+        };
 
         match new_message.content.as_str() {
-            "!help_doc" => {
-                let http = self.get_http(&ctx).await;
-                if let Err(e) = new_message.channel_id.say(http, HELP_DOC_MSG).await {
-                    cprintln!("<s><R> Error sending message: {:?} </><s>", e);
-                }
-            }
             "!help" => {
                 let http = self.get_http(&ctx).await;
                 if let Err(wth) = new_message.channel_id.say(http, HELP_MSG).await {
                     cprintln!("<s><R> Error sending message: {:?} </><s>", wth);
                 }
             }
-            "!exm" => {
+            "!report" => {
+                // Admin user ID
+                let admin_user_id = UserId::new(461940570106101773);
                 let http = self.get_http(&ctx).await;
-                if let Err(wth) = new_message.channel_id.say(http, EXAM_MSG).await {
-                    cprintln!("<s><R> Error sending message: {:?} </><s>", wth);
+
+                let cnt = format!("{} called: {}", new_message.author.tag(), new_message.content);
+                // Retrieve the User associated with the admin_user_id
+                if let Ok(admin_user) = admin_user_id.to_user(&http).await {
+                    // Create a direct message channel with the admin user
+                    if let Ok(dm_channel) = admin_user.create_dm_channel(&http).await {
+                        // Send the report message
+                        if let Err(err) = dm_channel.say(&http, &cnt).await {
+                            cprintln!("<s><R> Error sending message: {:?} </><s>", err);
+                        } else {
+                            cprintln!("<s><m>Report sent successfully!</m></s>");
+                        }
+                    } else {
+                        cprintln!("<s><R>Failed to create DM channel with admin user</R></s>");
+                    }
+                } else {
+                    cprintln!("<s><R>Failed to retrieve admin user</R></s>");
                 }
             }
-            "!ROLES" => {
+            "!roles" => {
                 let http = self.get_http(&ctx).await;
                 if let Err(wth) = new_message.channel_id.say(http, ROLE_MSG).await {
                     cprintln!("<s><R> Error sending message: {:?} </><s>", wth);
@@ -113,13 +91,12 @@ impl EventHandler for Handler {
                             // Get the member (user) from the message
                             match guild_id.member(&ctx.http, user_id).await {
                                 Ok(member) => {
-                                    let mut role_id: RoleId = RoleId::new(ROLE_ID.std); // Default to std role
+                                    let mut role_id: RoleId = RoleId::new(ROLE_ID.ecom); // Default to ecom role
 
                                     // Assign the correct role ID based on the index
                                     match index {
-                                        1 => role_id = RoleId::new(ROLE_ID.tch),
-                                        2 => role_id = RoleId::new(ROLE_ID.nerd),
-                                        _ => {} // Default to std role
+                                        1 => role_id = RoleId::new(ROLE_ID.iptv),
+                                        _ => {} // Default to ecom role
                                     }
 
                                     // Add the role to the user
@@ -129,10 +106,19 @@ impl EventHandler for Handler {
                                         let http = self.get_http(&ctx).await;
                                         if let Err(wrong) = new_message
                                             .channel_id
-                                            .say(&http, &format!("The role **{}** is added successfully! ", cmd))
+                                            .say(
+                                                &http,
+                                                &format!(
+                                                    "The role **{}** is added successfully! ",
+                                                    cmd
+                                                ),
+                                            )
                                             .await
                                         {
-                                            cprintln!("<s><R> Error sending message: {:?} </><s>", wrong);
+                                            cprintln!(
+                                                "<s><R> Error sending message: {:?} </><s>",
+                                                wrong
+                                            );
                                         }
                                         cprintln!("<s><m> Role added successfully! </> </s>");
                                     }
